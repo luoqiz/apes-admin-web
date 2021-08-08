@@ -1,0 +1,137 @@
+<template>
+    <a-modal
+            :destroy-on-close="true"
+            :mask-closable="false"
+            title="新增"
+            :visible="visible"
+            :onCancel="onCancel"
+            width=50%
+    >
+        <template #footer>
+            <a-button key="back" @click="() => onCancel()">取消</a-button>
+            <a-button key="submit" type="primary" :loading="onSubmitLoading" @click="onFinish">提交</a-button>
+        </template>
+
+        <a-form :labelCol="{ span: 4 }" :wrapper-col="{span:20}">
+                            
+                <a-form-item label="ID" v-bind="validateInfos.deptId">
+                    <a-input-number v-model:value="modelRef.deptId"/>
+                </a-form-item>
+                
+                <a-form-item label="上级部门" v-bind="validateInfos.pid">
+                    <a-input-number v-model:value="modelRef.pid"/>
+                </a-form-item>
+                
+                <a-form-item label="子部门数目" v-bind="validateInfos.subCount">
+                    <a-input-number v-model:value="modelRef.subCount"/>
+                </a-form-item>
+                
+                <a-form-item label="名称" v-bind="validateInfos.name">
+                    <a-input v-model:value="modelRef.name" placeholder="请输入名称" />
+                </a-form-item>
+                
+                <a-form-item label="排序" v-bind="validateInfos.deptSort">
+                    <a-input-number v-model:value="modelRef.deptSort"/>
+                </a-form-item>
+                
+                <a-form-item label="状态" v-bind="validateInfos.enabled">
+                    <a-radio-group v-model:value="modelRef.enabled">
+                        <a-radio :style="radioStyle" :value="true">是</a-radio>
+                        <a-radio :style="radioStyle" :value="false">否</a-radio>
+                    </a-radio-group>
+                </a-form-item>
+        </a-form>
+    </a-modal>
+</template>
+<script lang="ts">
+import { defineComponent, PropType, reactive } from "vue";
+import { useI18n } from "vue-i18n";
+import { message } from "ant-design-vue";
+import { useForm } from "@ant-design-vue/use";
+// import CKEditor from "@/components/CKEditor/index.vue";
+import { SysDeptDataType } from "../data.d";
+import { Props, validateInfos } from "@ant-design-vue/use/lib/useForm";
+
+interface CreateFormSetupData {
+    modelRef: Omit<SysDeptDataType, 'deptId'>;
+    validateInfos: validateInfos;
+    onFinish: () => Promise<void>;
+}
+
+export default defineComponent({
+    name: 'CreateForm',
+    props: {
+        visible: {
+            type: Boolean,
+            required: true
+        },
+        onCancel: {
+            type: Function,
+            required: true
+        },
+        onSubmitLoading: {
+            type: Boolean,
+            required: true
+        },
+        onSubmit: {
+            type: Function as PropType<(values: Omit<SysDeptDataType, 'deptId'>, resetFields: (newValues?: Props | undefined) => void) => void>,
+            required: true
+        }
+    },
+    components: {
+        // CKEditor
+    },
+    setup(props): CreateFormSetupData {
+
+        const { t } = useI18n();
+
+        // 表单值
+        const modelRef = reactive<Omit<SysDeptDataType, 'deptId'>>({
+                         
+            ///上级部门
+            pid:0,
+            
+            ///子部门数目
+            subCount:0,
+            
+            ///名称
+            name:'',
+            
+            ///排序
+            deptSort:0,
+            
+            ///状态
+            enabled:false,
+        });
+        // 表单验证
+        const rulesRef = reactive({
+            deptId: [],
+            pid: [],
+            subCount: [],
+            name: [],
+            deptSort: [],
+            enabled: [],
+        });
+        // 获取表单内容
+        const { resetFields, validate, validateInfos } = useForm(modelRef, rulesRef);
+        // 提交
+        const onFinish = async () => {
+            try {
+                const fieldsValue = await validate<Omit<SysDeptDataType, 'deptId'>>();
+                console.log("fieldValue:",fieldsValue)
+                props.onSubmit(fieldsValue, resetFields);
+            } catch (error) {
+                console.log('error', error);
+                message.warning(t('app.global.form.validatefields.catch'));
+            }
+        };
+
+        return {
+            modelRef,
+            validateInfos,
+            onFinish
+        }
+
+    }
+})
+</script>
